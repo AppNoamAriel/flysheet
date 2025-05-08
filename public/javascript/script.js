@@ -21,6 +21,48 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('addFlysheetBtn').addEventListener('click', handleAddFlysheet);
 
   await loadTable();
+  // Gestion du menu utilisateur (compte + logout)
+  const authSection = document.getElementById('authSection');
+  authSection.innerHTML = `
+  <div class="user-menu">
+    <button id="accountBtn" class="account-button" aria-label="Mon compte">
+      <span class="material-symbols-outlined">account_circle</span>
+    </button>
+    <div class="user-dropdown" id="userDropdown">
+      <a href="/compte.html" class="dropdown-btn">
+        <span class="material-symbols-outlined">settings</span>
+        <span>Gérer mes accès</span>
+      </a>
+      <button id="logoutBtn" class="dropdown-btn logout">
+        <span class="material-symbols-outlined">logout</span>
+        <span>Se déconnecter</span>
+      </button>
+    </div>
+  </div>
+`;
+
+// Ouverture/fermeture du menu
+  const accountBtn = document.getElementById('accountBtn');
+  const dropdown = document.getElementById('userDropdown');
+
+  accountBtn.addEventListener('click', () => {
+    dropdown.classList.toggle('show');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!authSection.contains(e.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
+
+// Déconnexion
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    if (confirm("Es-tu sûr de vouloir te déconnecter ?")) {
+      sessionStorage.clear();
+      window.location.href = '/login.html';
+    }
+  });
+
 });
 
 async function handleAddFlysheet() {

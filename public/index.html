@@ -64,7 +64,23 @@
   window.addEventListener('pageshow', checkUserExistence);
 </script>
 
-<div class="auth-links" id="authSection"></div>
+<div class="auth-links" id="authSection">
+  <div class="user-menu">
+    <button id="accountBtn" class="account-button" aria-label="Mon compte">
+      <span class="material-symbols-outlined">account_circle</span>
+    </button>
+    <div class="user-dropdown" id="userDropdown">
+      <a href="/compte.html" class="dropdown-btn">
+        <span class="material-symbols-outlined">settings</span>
+        <span>Gérer mes accès</span>
+      </a>
+      <button id="logoutBtn" class="dropdown-btn logout">
+        <span class="material-symbols-outlined">logout</span>
+        <span>Se déconnecter</span>
+      </button>
+    </div>
+  </div>
+</div>
 
 <h1>TABLEAU DES FLYSHEETS</h1>
 <button id="exportXLSXBtn">Exporter en XLSX</button>
