@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>ADMINISTRATION</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+</head>
+<body>
+  <script>
+    async function checkUserExistence() {
+      const username = sessionStorage.getItem("username");
+      if (!sessionStorage.getItem("isLoggedIn") || !username) {
+        return window.location.href = "/login.html";
+      }
+
+      try {
+        const res = await fetch(`/api/users/check/${username}`, { cache: 'no-store' });
+        const data = await res.json();
+
+        if (!data.exists) {
+          alert("Tu ne peux plus accéder à cette page car ton compte a été supprimé.");
+          sessionStorage.clear();
+          window.location.href = "/login.html";
+        }
+      } catch (error) {
+        console.error("Erreur vérification utilisateur :", error);
+        sessionStorage.clear();
+        window.location.href = "/login.html";
+      }
+    }
+
+    // Vérifie même après retour arrière
+    window.addEventListener('pageshow', checkUserExistence);
+  </script>
+
+  <div class="auth-links" id="authSection"></div>
+
+  <h1>GERER</h1>
+
+  <table class="data-table" style="max-width: 900px; width: 95%;">
+    <thead>
+      <tr>
+        <th>Identifiant(s)</th>
+        <th>Suppression</th>
+      </tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const currentUser = sessionStorage.getItem('username');
+
+      const authSection = document.getElementById('authSection');
+      if (currentUser) {
+        // Le menu utilisateur est supprimé
+        authSection.innerHTML = '';
+      }
+
+      fetch('/api/users')
+        .then(res => res.json())
+        .then(users => {
+          const userTable = document.getElementById('userTable');
+          userTable.innerHTML = '';
+
+          users.forEach(user => {
+            const row = document.createElement('tr');
+
+            const cell = document.createElement('td');
+            cell.textContent = user.username;
+            row.appendChild(cell);
+
+            const deleteCell = document.createElement('td');
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-btn';
+            deleteButton.innerHTML = '<span class="material-symbols-outlined">cancel</span>';
+
+            deleteButton.onclick = () => {
+              if (confirm('Confirmer la suppression de cet utilisateur ?')) {
+                fetch(`/api/users/${user._id}/delete`, { method: 'DELETE' })
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data.message !== "OK.") throw new Error('Erreur.');
+
+                    if (user.username === currentUser) {
+                      alert("Tu ne peux plus accéder au tableau car ton compte a été supprimé.");
+                      sessionStorage.clear();
+                      window.location.href = '/login.html';
+                    } else {
+                      row.remove();
+                    }
+                  })
+                  .catch(err => {
+                    console.error("Erreur suppression utilisateur :", err);
+                    alert('Erreur.');
+                  });
+              }
+            };
+
+            deleteCell.appendChild(deleteButton);
+            row.appendChild(deleteCell);
+            userTable.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error("Erreur chargement utilisateurs :", error);
+          alert("Erreur.");
+        });
+    });
+  </script>  
+</body>
+</html>

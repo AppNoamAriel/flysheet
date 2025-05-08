@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRÉATION DE COMPTE</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="login-container">
+    <h2>CRÉER UN COMPTE</h2>
+    <form id="registerForm" autocomplete="off">
+      <input type="text" id="registerUsername" placeholder="Nom d'utilisateur" required autocomplete="off">
+      <input type="password" id="registerPassword" placeholder="Mot de passe" required autocomplete="new-password">
+      <input type="password" id="confirmPassword" placeholder="Confirmez le mot de passe" required autocomplete="new-password">
+      <button type="submit">S'inscrire</button>
+    </form>
+    <p>Déjà un compte ? <a href="/login.html">Se connecter</a></p>
+  </div>
+
+  <script>
+    window.addEventListener('pageshow', () => {
+      document.getElementById('registerUsername').value = '';
+      document.getElementById('registerPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const username = document.getElementById('registerUsername').value.trim();
+      const password = document.getElementById('registerPassword').value.trim();
+      const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+      if (password !== confirmPassword) {
+        alert("Erreur.");
+        return;
+      }
+
+      fetch('/api/users/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur.');
+        return res.json();
+      })
+      .then(() => {
+        alert("Compte créé avec succès !");
+        sessionStorage.clear(); 
+        window.location.href = "/login.html";
+      })
+      .catch(err => alert(err.message));
+    });
+  </script>
+</body>
+</html>
