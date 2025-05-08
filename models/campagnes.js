@@ -12,7 +12,8 @@ const campagnesSchema = mongoose.Schema({
   installer: { type: Number, default: 0 },
   etat: { type: Boolean, default: false },
   departements: { type: [String], default: [] }, 
-  pile: { type: Boolean, default: false }        
+  pile: { type: Boolean, default: false },
+  subcategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Subcategories' },        
 });
 
 module.exports = mongoose.model('Campagnes', campagnesSchema);

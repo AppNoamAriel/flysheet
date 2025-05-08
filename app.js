@@ -20,6 +20,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/users', userRoutes);
 app.use('/api/campagnes', campagneRoutes);
+app.use('/api/subcategories', require('./routes/subcategories'));
 app.use('/api/leads', leadsRoutes); 
 
 app.use((req, res) => {
