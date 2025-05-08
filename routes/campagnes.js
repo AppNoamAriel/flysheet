@@ -6,9 +6,9 @@ const exportCtrl = require('../controllers/exportXLS');
 router.get('/getfilters', apiCtrl.getFilters);
 
 router.post('/add', apiCtrl.add);
-router.delete('/:id/delete', apiCtrl.delete);
+router.delete('/:id/delete', apiCtrl.delete); // ✅ cohérent avec frontend
 router.put('/update-objectif', apiCtrl.updateObjectif);
-router.put('/toggle', apiCtrl.toggleEtat);
+router.patch('/toggle/:id', apiCtrl.toggleEtat); // ✅ cohérent avec frontend
 router.get('/:id/download', exportCtrl.exportOneToXlsx);
 router.get('/:id', apiCtrl.getOneById);
 router.get('/', apiCtrl.getAll);
