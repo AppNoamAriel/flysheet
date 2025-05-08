@@ -30,7 +30,7 @@ async function initLeafletMap() {
 
     const resCoords = await fetch('/data/departementsCoords.json');
     const departementCoords = await resCoords.json();
-
+dfddd
     // Zoom automatiquement sur les départements 01 à 95
     const codesMetropole = Object.keys(departementCoords)
         .filter(code => {
