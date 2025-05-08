@@ -71,7 +71,7 @@ exports.updateObjectif = async (req, res) => {
 
 exports.toggleEtat = async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id } = req.params;
     const campagne = await campagnesModel.findById(id);
 
     if (!campagne) {
@@ -205,4 +205,3 @@ exports.removeDepartement = async (req, res) => {
     res.status(500).json({ status: false, message: "Erreur serveur" });
   }
 };
-
