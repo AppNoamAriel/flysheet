@@ -44,8 +44,13 @@ async function initLeafletMap() {
     });
 
     const focusBounds = L.latLngBounds(latLngs);
-    leafletMap.fitBounds(focusBounds);
-
+    leafletMap.fitBounds([
+        [41.2, -5.0], // Sud-Ouest
+        [51.1, 9.3]   // Nord-Est
+    ], {
+        padding: [0, 0],
+        maxZoom: 6
+    });
 
     await displayCampagnesOnMap();
 }

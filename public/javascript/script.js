@@ -63,7 +63,113 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  document.getElementById('typeFilter').addEventListener('change', filterTable);
+  document.getElementById('goalFilter').addEventListener('change', filterTable);
+  document.getElementById('nameFilter').addEventListener('input', filterTable);
+
+  document.getElementById('resetFilters').addEventListener('click', () => {
+    document.getElementById('typeFilter').value = 'all';
+    document.getElementById('goalFilter').value = 'all';
+    document.getElementById('nameFilter').value = '';
+    filterTable();
+  });
+
+  function filterTable() {
+    const type = document.getElementById('typeFilter').value;
+    const goal = document.getElementById('goalFilter').value;
+    const nom = document.getElementById('nameFilter').value.trim();
+
+    const filters = {};
+    if (type !== 'all') filters.typeProduit = type;
+    if (goal !== 'all') filters.objectif = goal;
+    if (nom) filters.nom = nom;
+
+    loadTable(filters);
+  }
 });
+
+function attachEtatHandlers() {
+  const tableBody = document.getElementById('flysheetTableBody');
+
+  tableBody.addEventListener('click', (e) => {
+    const row = e.target.closest('tr');
+    if (!row) return;
+    const id = row.dataset.id;
+
+    if (e.target.closest('.download-btn')) {
+      window.open(`/api/campagnes/${id}/download`, '_blank');
+      return;
+    }
+
+    if (e.target.closest('.delete-btn')) {
+      if (!confirm("Confirmer la suppression de cette campagne ?")) return;
+      fetch(`/api/campagnes/${id}/delete`, { method: 'DELETE' })
+          .then(res => {
+            if (!res.ok) throw new Error("Erreur.");
+            row.remove();
+          })
+          .catch(err => alert("Erreur : " + err.message));
+      return;
+    }
+
+    if (e.target.closest('.play-pause-btn')) {
+      const button = e.target.closest('.play-pause-btn');
+      const icon = button.querySelector('.material-symbols-outlined');
+
+      fetch(`/api/campagnes/toggle`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      })
+          .then(res => res.json())
+          .then(data => {
+            const isPaused = data.etat;
+            button.classList.toggle('play', !isPaused);
+            button.classList.toggle('pause', isPaused);
+            icon.textContent = isPaused ? 'pause' : 'play_arrow';
+          })
+          .catch(err => console.error("Erreur toggle :", err));
+    }
+  });
+
+  tableBody.addEventListener('keydown', (e) => {
+    if (e.target.classList.contains('editable-goal') && e.key === 'Enter') {
+      e.preventDefault();
+      const row = e.target.closest('tr');
+      const id = row.dataset.id;
+      const newGoal = parseInt(e.target.value, 10);
+
+      if (isNaN(newGoal) || newGoal <= 0) return alert("Erreur.");
+
+      if (!confirm("Modifier l'objectif ?")) return;
+
+      fetch('/api/campagnes/update-objectif', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, objectif: newGoal })
+      })
+          .then(res => res.json())
+          .then(() => {
+            const current = parseInt(row.querySelector('.valides-cell')?.textContent || 0, 10);
+            const progress = Math.min(100, Math.round((current / newGoal) * 100));
+
+            const bar = row.querySelector('.progress-bar');
+            const display = row.querySelector('.goal-display');
+
+            if (bar) bar.style.width = `${progress}%`;
+            if (bar) bar.style.backgroundColor = getProgressColor(progress);
+            if (display) display.textContent = `(${progress}%)`;
+
+            alert("Objectif mis à jour !");
+          })
+          .catch(err => {
+            console.error(err);
+            alert("Erreur.");
+          });
+    }
+  });
+}
+
 
 async function handleAddFlysheet() {
   const nom = document.getElementById('nom').value.trim();
