@@ -5,6 +5,7 @@ const path = require('path');
 const userRoutes = require('./routes/user');
 const campagneRoutes = require('./routes/campagnes');
 const leadsRoutes = require('./routes/leads');
+const categoriesRoutes = require('./routes/categories');
 
 const app = express(); 
 const session = require('express-session');
@@ -21,7 +22,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/users', userRoutes);
 app.use('/api/campagnes', campagneRoutes);
 app.use('/api/subcategories', require('./routes/subcategories'));
-app.use('/api/leads', leadsRoutes); 
+app.use('/api/categories', require('./routes/categories'));
+app.use('/api/leads', leadsRoutes);
 
 app.use((req, res) => {
   res.status(404).send('Erreur.');
