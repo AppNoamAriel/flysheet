@@ -1,79 +1,37 @@
-const Subcategory = require('../models/subcategories');
-const Campagne = require('../models/campagnes');
+const subFuncData = require('../functions/database/subcategories');
 
-// 🔄 GET toutes les sous-catégories avec nom de la catégorie
+// 🔄 GET toutes les sous-catégories
 exports.getAll = async (req, res) => {
-  try {
-    const subcategories = await Subcategory.find().populate('id_cat', 'nom');
-    res.status(200).json({ status: true, data: subcategories });
-  } catch (err) {
-    console.error("❌ Erreur getAll subcategories :", err);
-    res.status(500).json({ status: false, message: "Erreur serveur." });
-  }
+  const data = await subFuncData.getAll();
+  res.status(200).json({ status: true, data });
 };
 
-// ➕ Ajouter une sous-catégorie
+// ➕ Ajouter
 exports.add = async (req, res) => {
   const { nom, id_cat } = req.body;
-
-  if (!nom || !id_cat) {
-    return res.status(400).json({ status: false, message: "Champs manquants." });
-  }
-
-  try {
-    const existing = await Subcategory.findOne({ nom });
-    if (existing) {
-      return res.status(400).json({ status: false, message: "Cette sous-catégorie existe déjà." });
-    }
-
-    const subcat = new Subcategory({ nom, id_cat });
-    await subcat.save();
-    res.status(201).json({ status: true, message: "Sous-catégorie ajoutée." });
-  } catch (err) {
-    console.error("❌ Erreur add subcategory :", err);
-    res.status(500).json({ status: false, message: "Erreur serveur." });
-  }
+  const result = await subFuncData.add(nom, id_cat);
+  if (result.error) return res.status(400).json({ status: false, message: result.error });
+  res.status(201).json({ status: true, message: "Sous-catégorie ajoutée." });
 };
 
-// 📝 Modifier une sous-catégorie
+// 📝 Modifier
 exports.update = async (req, res) => {
-  const { id } = req.params;
   const { nom, id_cat } = req.body;
+  const { id } = req.params;
 
-  if (!nom || !id_cat) {
-    return res.status(400).json({ status: false, message: "Champs manquants." });
-  }
+  const updated = await subFuncData.update(id, nom, id_cat);
+  if (!updated) return res.status(404).json({ status: false, message: "Sous-catégorie non trouvée." });
 
-  try {
-    const updated = await Subcategory.findByIdAndUpdate(id, { nom, id_cat }, { new: true });
-    if (!updated) {
-      return res.status(404).json({ status: false, message: "Sous-catégorie introuvable." });
-    }
-
-    res.status(200).json({ status: true, message: "Sous-catégorie modifiée.", data: updated });
-  } catch (err) {
-    console.error("❌ Erreur update subcategory :", err);
-    res.status(500).json({ status: false, message: "Erreur serveur." });
-  }
+  res.status(200).json({ status: true, message: "Modifiée.", data: updated });
 };
 
-// ❌ Supprimer une sous-catégorie (protégée si utilisée)
+// ❌ Supprimer
 exports.delete = async (req, res) => {
   const { id } = req.params;
 
-  try {
-    const isUsed = await Campagne.exists({ subcategory: id });
-    if (isUsed) {
-      return res.status(400).json({
-        status: false,
-        message: "Impossible de supprimer : cette sous-catégorie est utilisée."
-      });
-    }
+  const isUsed = await require('../models/campagnes').exists({ subcategory: id });
+  if (isUsed) return res.status(400).json({ status: false, message: "Sous-catégorie utilisée." });
 
-    await Subcategory.findByIdAndDelete(id);
-    res.status(200).json({ status: true, message: "Sous-catégorie supprimée." });
-  } catch (err) {
-    console.error("❌ Erreur suppression sous-catégorie :", err);
-    res.status(500).json({ status: false, message: "Erreur serveur." });
-  }
+  await subFuncData.delete(id);
+  res.status(200).json({ status: true, message: "Supprimée." });
 };

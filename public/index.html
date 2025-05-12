@@ -10,26 +10,20 @@
 
   <link rel="stylesheet" href="/css/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
 <body>
-<nav class="top-nav">
-  <div class="nav-container">
-    <span class="nav-title"></span>
-    <div class="nav-links">
-      <a href="/index.html" class="nav-link active">Tableau</a>
-      <a href="/map.html" class="nav-link">Carte</a>
-    </div>
-  </div>
-</nav>
 
-<!-- Auth & Validation -->
+<!-- ✅ Navbar injectée dynamiquement -->
+<div id="navbarContainer"></div>
+
+<!-- ✅ Auth JS -->
 <script>
   const username = sessionStorage.getItem("username");
   const isLoggedIn = sessionStorage.getItem("isLoggedIn");
 
   if (!isLoggedIn || !username) {
+    sessionStorage.clear();
     window.location.href = "/login.html";
   }
 
@@ -48,7 +42,6 @@
     try {
       const res = await fetch(`/api/users/check/${username}`, { cache: 'no-store' });
       const data = await res.json();
-
       if (!data.exists) {
         alert("Tu ne peux plus accéder au tableau car ton compte a été supprimé.");
         sessionStorage.clear();
@@ -64,112 +57,97 @@
   window.addEventListener('pageshow', checkUserExistence);
 </script>
 
-<div class="auth-links" id="authSection">
-  <div class="user-menu">
-    <button id="accountBtn" class="account-button" aria-label="Mon compte">
-      <span class="material-symbols-outlined">account_circle</span>
-    </button>
-    <div class="user-dropdown" id="userDropdown">
-      <a href="/compte.html" class="dropdown-btn">
-        <span class="material-symbols-outlined">settings</span>
-        <span>Gérer mes accès</span>
-      </a>
-      <button id="logoutBtn" class="dropdown-btn logout">
-        <span class="material-symbols-outlined">logout</span>
-        <span>Se déconnecter</span>
-      </button>
-    </div>
-  </div>
-</div>
+<!-- ✅ Titre -->
+<h1 class="text-center my-4">📊 Tableau des Flysheets</h1>
 
-<h1>TABLEAU DES FLYSHEETS</h1>
-
-
+<!-- ✅ Filtrage -->
 <div class="filters-container">
-  <h2>FILTRES</h2>
+  <h2>Filtres</h2>
   <div class="filter-controls">
     <div class="filter-group">
-      <label>NOM:</label>
+      <label>NOM :</label>
       <input type="text" id="nameFilter" />
     </div>
     <div class="filter-group">
-      <label>TYPE DE PRODUIT(S):</label>
+      <label>TYPE DE PRODUIT(S) :</label>
       <select id="typeFilter">
         <option value="all"></option>
-        <option value="PV">PV</option>
-        <option value="PAC">PAC</option>
-        <option value="ITE">ITE</option>
       </select>
     </div>
     <div class="filter-group">
-      <label>OBJECTIF(S):</label>
+      <label>OBJECTIF(S) :</label>
       <select id="goalFilter">
-        <option value="all"></option>
-        <option value="lte25">≤ 25%</option>
-        <option value="lte50">≤ 50%</option>
-        <option value="gte50">≥ 50%</option>
-        <option value="gte75">≥ 75%</option>
+        <option value="all">Tous</option>
+        <option value="0-25">0% à 25%</option>
+        <option value="25-50">25% à 50%</option>
+        <option value="50-75">50% à 75%</option>
+        <option value="75-100">75% à 100%</option>
       </select>
     </div>
     <div class="filter-reset">
-      <button id="resetFilters">
+      <button id="resetFilters" title="Réinitialiser les filtres">
         <span class="material-symbols-outlined">refresh</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- Formulaire ajout Flysheet -->
+<!-- ✅ Ajout Flysheet -->
 <table class="input-table">
   <thead>
   <tr>
-    <th>Type de produit(s)</th>
+    <th>Type</th>
     <th>Pile</th>
-    <th>Nom de la Flysheet</th>
+    <th>Nom</th>
     <th>URL</th>
-    <th>Objectif(s)</th>
-    <th>Département(s)</th>
+    <th>Objectif</th>
+    <th>Départements</th>
     <th></th>
   </tr>
   </thead>
   <tbody>
   <tr>
+    <td><select id="type" required></select></td>
     <td>
-      <select id="type" name="type" required>
-        <option value="PV">PV</option>
-        <option value="PAC">PAC</option>
-        <option value="ITE">ITE</option>
-      </select>
-    </td>
-    <td>
-      <select id="pile" name="pile" required>
+      <select id="pile">
         <option value="true">Oui</option>
         <option value="false" selected>Non</option>
       </select>
     </td>
-    <td><input type="text" id="nom" name="nom" required /></td>
-    <td><input type="text" id="urlInput" name="urlInput" required /></td>
-    <td><input type="number" id="objectif" name="objectif" required min="1" /></td>
-    <td><input type="text" id="departements" name="departements"/></td>
-    <td>
-      <button id="addFlysheetBtn" type="button">
-        <span class="material-symbols-outlined">add</span>
-      </button>
-    </td>
+    <td><input type="text" id="nom" required /></td>
+    <td><input type="text" id="urlInput" required /></td>
+    <td><input type="number" id="objectif" min="1" /></td>
+    <td><input type="text" id="departements" /></td>
+    <td><button id="addFlysheetBtn"><span class="material-symbols-outlined">add</span></button></td>
   </tr>
   </tbody>
 </table>
 
-<!-- Tableau principal -->
+<!-- ✅ Tableau principal -->
 <table class="data-table">
   <thead>
   <tr>
-    <th>Flysheet</th><th>Valides</th><th>Invalides</th><th>Tél.</th><th>Uniques</th><th>Installés</th><th style="max-width: 200px;">Département(s)</th><th>Type</th><th>Objectif</th><th>État</th><th>Suppression</th><th>Download</th>
+    <th>Flysheet</th>
+    <th>Valides</th>
+    <th>Invalides</th>
+    <th>Tél.</th>
+    <th>Uniques</th>
+    <th>Installés</th>
+    <th>Départements</th>
+    <th>Type</th>
+    <th>Objectif</th>
+    <th>État</th>
+    <th>Suppression</th>
+    <th>Download</th>
   </tr>
   </thead>
   <tbody id="flysheetTableBody"></tbody>
 </table>
 
+<!-- ✅ JS -->
+<script src="/javascript/inject-navbar.js"></script>
 <script src="/javascript/script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

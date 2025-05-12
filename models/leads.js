@@ -4,7 +4,7 @@ const leadsSchema = mongoose.Schema({
   etes_vous: { type: String },
   chauffage: { type: String },
   confirmation_nom: { type: String },
-  comment_vous_appeler_vous: { type: String },
+  comment_vous_appelez_vous: { type: String },
   lastname: { type: String },
   firstname: { type: String },
   phone: { type: String },
@@ -17,6 +17,7 @@ const leadsSchema = mongoose.Schema({
   email: { type: String },
   date: { type: String },
   token: { type: String },
+  product: { type: String, required: true },
   url_flysheet: { type: String, default:''},
   status_transmission: { type: Boolean, default: false}
 });

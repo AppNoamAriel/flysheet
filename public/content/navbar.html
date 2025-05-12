@@ -1,0 +1,41 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-2">
+  <div class="container">
+    <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/index.html">
+      <span class="material-symbols-outlined">dashboard</span>SpeedySMS
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarLinks">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse justify-content-between" id="navbarLinks">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-3">
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center gap-1" href="/index.html" id="link-tableau">
+            <span class="material-symbols-outlined">table</span> Tableau
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center gap-1" href="/map.html" id="link-carte">
+            <span class="material-symbols-outlined">map</span> Carte
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link d-flex align-items-center gap-1" href="/categories.html" id="link-categories">
+            <span class="material-symbols-outlined">category</span> Catégories
+          </a>
+        </li>
+      </ul>
+
+      <div class="dropdown">
+        <button class="btn btn-light d-flex align-items-center gap-1 dropdown-toggle" type="button" id="dropdownAccount" data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="material-symbols-outlined">account_circle</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownAccount">
+          <li><a class="dropdown-item d-flex align-items-center gap-2" href="/compte.html"><span class="material-symbols-outlined">settings</span> Gérer mes accès</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><button id="logoutBtn" class="dropdown-item text-danger d-flex align-items-center gap-2"><span class="material-symbols-outlined">logout</span> Se déconnecter</button></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
