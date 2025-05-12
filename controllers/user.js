@@ -1,4 +1,7 @@
 const usersModel = require('../models/user');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const token = require('../middleware/token');
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -36,7 +39,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Utilisateur déjà existant." });
     }
 
-    const user = new usersModel({ username, password });
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    const user = new usersModel({ username, password: hashedPassword });
     await user.save();
 
     res.status(201).json({ message: "OK." });
@@ -49,18 +53,26 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
+    const user = await usersModel.findOne({ username });
 
-    const user = await usersModel.findOne({ username, password });
-    if (!user) {
+    if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.status(401).json({ message: "Identifiants invalides." });
     }
 
-    res.status(200).json({ message: "OK." });
+    const userToken = token.createToken(user._id, 'admin'); // adapte accountType si besoin
+
+    res.status(200).json({
+      message: "OK.",
+      token: userToken,
+      id: user._id,
+      typeAccount: "admin" // ou autre selon tes besoins
+    });
   } catch (err) {
     console.error("Erreur:", err);
     res.status(500).json({ message: "Erreur serveur." });
   }
 };
+
 exports.checkUsernameExists = async (req, res) => {
   try {
     const user = await usersModel.findOne({ username: req.params.username });

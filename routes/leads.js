@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const leadsCtrl = require('../controllers/leads');
 
-const userOrAdminLogged = require('../middleware/users');
+const userOrAdminLogged = require('../middleware/user');
 
 router.post('/', userOrAdminLogged, leadsCtrl.addLead);
 router.put('/:id', userOrAdminLogged, leadsCtrl.updateLead);

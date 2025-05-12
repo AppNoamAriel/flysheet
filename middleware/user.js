@@ -10,15 +10,15 @@ module.exports = async (req, res, next) => {
             return res.status(403).json({ status: false, error: 'Token ou ID manquant' });
         }
 
-        const decodedToken = jwt.verify(token, tokenConst.privateKey);
+        const decoded = jwt.verify(token, tokenConst.privateKey);
 
         if (
-            decodedToken.userId === userId &&
-            ['admin', 'sous_admin', 'client'].includes(decodedToken.accountType)
+            decoded.userId === userId &&
+            ['admin', 'sous_admin', 'client'].includes(decoded.accountType)
         ) {
             res.setHeader('userId', userId);
-            res.setHeader('isAdmin', decodedToken.accountType === 'admin');
-            res.setHeader('isSousAdmin', decodedToken.accountType === 'sous_admin');
+            res.setHeader('isAdmin', decoded.accountType === 'admin');
+            res.setHeader('isSousAdmin', decoded.accountType === 'sous_admin');
             return next();
         }
 
