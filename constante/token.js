@@ -1,1 +1,4 @@
-exports.privateKey = "7f3b9d6e0a2c8e4d1b5f9a3c6e2d8f0a7b4c1d9e8f2a6b5c4d7e9f0a1b2c3d4e5f6c9d0e1f2a3b";
+module.exports = {
+    privateKey: "fb0581cce8b165e812fc756fa0acc9812cc8b14e10e648a198fe4ce8bcb99398d4e1b95a11859da1f0445ace5ba5b99c9f96648cdb850e93a4c64228f597bb02",
+    publicToken: "dae746a03e7cca61b1c13442e63445b5cea64e5608f16edfa0ca8d2eed55362186bf40db3fdf792a23c03640d53844b0da7f701e8c525ce3cd1a775e5ce58890"
+};
