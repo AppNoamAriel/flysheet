@@ -106,54 +106,80 @@ exports.toggleEtat = async (req, res) => {
   }
 };
 
-const { Types } = require('mongoose');
-
 exports.getAll = async (req, res) => {
+  console.log("🟡 getAll() appelée");
+
   const { nom, typeProduit, objectif } = req.query;
 
   try {
-    const campagnes = await campagnesFuncData.getBySearch(nom, typeProduit, objectif);
-    if (!campagnes) {
-      return res.status(400).json({ status: false, message: "Erreur lors de la récupération des campagnes." });
-    }
+    const result = await campagnesFuncData.getBySearch(nom, typeProduit, objectif);
+    if (!result) return res.status(400).json({ status: false, message: "Erreur." });
 
-    const leadsSansFlysheet = await leadModel.find({ url_flysheet: "" });
+    console.log(`🟡 Campagnes trouvées : ${result.length}`);
 
-    const normalize = str =>
-        str?.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+    const leads = await leadModel.find({ url_flysheet: "" });
+    console.log(`🔎 Leads en pile (url_flysheet vide) : ${leads.length}`);
 
-    for (let campagne of campagnes) {
+    for (let campagne of result) {
       if (!campagne.pile) continue;
 
-      const campagneTypeId = normalize(campagne.typeProduit);
-      let campagneTypeName = "";
+      let campagneTypeName = '';
+      let campagneTypeId = campagne.typeProduit?.toString().trim();
 
+      // Récupérer nom de sous-catégorie
       try {
-        // 💡 Convertir en ObjectId avant le findById
-        const typeProduitId = Types.ObjectId.isValid(campagne.typeProduit)
-            ? new Types.ObjectId(campagne.typeProduit)
-            : null;
-
-        const subcat = typeProduitId ? await subcategoryModel.findById(typeProduitId) : null;
-
-        campagneTypeName = normalize(subcat?.nom || campagne.typeProduit);
+        const subcat = await subcategoryModel.findById(campagne.typeProduit);
+        if (subcat && subcat.nom) {
+          campagneTypeName = subcat.nom.toLowerCase().trim();
+        } else {
+          campagneTypeName = campagne.typeProduit?.toString().toLowerCase().trim();
+        }
       } catch (e) {
-        campagneTypeName = campagneTypeId;
+        console.warn("⚠️ Erreur récupération sous-catégorie :", e.message);
+        campagneTypeName = campagne.typeProduit?.toString().toLowerCase().trim();
       }
 
-      const pileLeads = leadsSansFlysheet.filter(lead => {
-        const leadProd = normalize(lead.product || "");
-        return leadProd === campagneTypeName || leadProd === campagneTypeId;
+      console.log(`📦 Analyse de la pile pour campagne : ${campagne.nom}`);
+      console.log(`🔧 Type produit attendu (nom) : "${campagneTypeName}"`);
+      console.log(`🆔 Type produit attendu (id) : "${campagneTypeId}"`);
+
+      // Logs tous les leads
+      leads.forEach((lead, i) => {
+        console.log(`➡️ [Lead ${i + 1}] lead.product = "${lead.product}"`);
       });
 
-      campagne.valide = pileLeads.filter(l => l.etes_vous === "Propriétaire d'une maison").length;
-      campagne.invalide = pileLeads.filter(l => l.etes_vous !== "Propriétaire d'une maison").length;
+      // Comparaison robuste
+      const pileLeads = leads.filter(lead => {
+        const leadProd = (lead.product || "").toString().toLowerCase();
+
+        const matchNom = leadProd == campagneTypeName;
+        const matchId  = leadProd == campagneTypeId;
+
+        if (matchNom || matchId) {
+          console.log(`✅ Match trouvé pour lead.product="${leadProd}"`);
+        }
+
+        return matchNom || matchId;
+      });
+
+      console.log(`🔢 Leads dans cette pile : ${pileLeads.length}`);
+
+      campagne.valide = pileLeads.filter(l =>
+          l.etes_vous === "Propriétaire d'une maison"
+      ).length;
+
+      campagne.invalide = pileLeads.filter(l =>
+          l.etes_vous !== "Propriétaire d'une maison"
+      ).length;
+
       campagne.tel = campagne.valide + campagne.invalide;
       campagne.unique = [...new Set(pileLeads.map(l => l.phone).filter(Boolean))].length;
       campagne.installer = [...new Set(pileLeads.map(l => l.zipcode).filter(Boolean))].length;
+
+      console.log(`✅ Résumé pile: ${campagne.valide} valides, ${campagne.invalide} invalides, ${campagne.tel} tél., ${campagne.unique} uniques, ${campagne.installer} installés`);
     }
 
-    return res.status(200).json({ status: true, message: "OK.", data: campagnes });
+    return res.status(200).json({ status: true, message: "OK.", data: result });
 
   } catch (err) {
     console.error("❌ Erreur getAll :", err);
