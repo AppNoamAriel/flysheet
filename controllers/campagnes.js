@@ -107,79 +107,44 @@ exports.toggleEtat = async (req, res) => {
 };
 
 exports.getAll = async (req, res) => {
-  console.log("🟡 getAll() appelée");
-
   const { nom, typeProduit, objectif } = req.query;
 
   try {
-    const result = await campagnesFuncData.getBySearch(nom, typeProduit, objectif);
-    if (!result) return res.status(400).json({ status: false, message: "Erreur." });
+    const campagnes = await campagnesFuncData.getBySearch(nom, typeProduit, objectif);
+    if (!campagnes) {
+      return res.status(400).json({ status: false, message: "Erreur lors de la récupération des campagnes." });
+    }
 
-    console.log(`🟡 Campagnes trouvées : ${result.length}`);
+    const leadsSansFlysheet = await leadModel.find({ url_flysheet: "" });
 
-    const leads = await leadModel.find({ url_flysheet: "" });
-    console.log(`🔎 Leads en pile (url_flysheet vide) : ${leads.length}`);
+    const normalize = str => str?.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 
-    for (let campagne of result) {
+    for (let campagne of campagnes) {
       if (!campagne.pile) continue;
 
-      let campagneTypeName = '';
-      let campagneTypeId = campagne.typeProduit?.toString().trim();
+      let campagneTypeId = normalize(campagne.typeProduit);
+      let campagneTypeName = "";
 
-      // Récupérer nom de sous-catégorie
       try {
         const subcat = await subcategoryModel.findById(campagne.typeProduit);
-        if (subcat && subcat.nom) {
-          campagneTypeName = subcat.nom.toLowerCase().trim();
-        } else {
-          campagneTypeName = campagne.typeProduit?.toString().toLowerCase().trim();
-        }
+        campagneTypeName = normalize(subcat?.nom || campagne.typeProduit);
       } catch (e) {
-        console.warn("⚠️ Erreur récupération sous-catégorie :", e.message);
-        campagneTypeName = campagne.typeProduit?.toString().toLowerCase().trim();
+        campagneTypeName = campagneTypeId;
       }
 
-      console.log(`📦 Analyse de la pile pour campagne : ${campagne.nom}`);
-      console.log(`🔧 Type produit attendu (nom) : "${campagneTypeName}"`);
-      console.log(`🆔 Type produit attendu (id) : "${campagneTypeId}"`);
-
-      // Logs tous les leads
-      leads.forEach((lead, i) => {
-        console.log(`➡️ [Lead ${i + 1}] lead.product = "${lead.product}"`);
+      const pileLeads = leadsSansFlysheet.filter(lead => {
+        const leadProd = normalize(lead.product || "");
+        return leadProd === campagneTypeName || leadProd === campagneTypeId;
       });
 
-      // Comparaison robuste
-      const pileLeads = leads.filter(lead => {
-        const leadProd = (lead.product || "").toString().toLowerCase();
-
-        const matchNom = leadProd == campagneTypeName;
-        const matchId  = leadProd == campagneTypeId;
-
-        if (matchNom || matchId) {
-          console.log(`✅ Match trouvé pour lead.product="${leadProd}"`);
-        }
-
-        return matchNom || matchId;
-      });
-
-      console.log(`🔢 Leads dans cette pile : ${pileLeads.length}`);
-
-      campagne.valide = pileLeads.filter(l =>
-          l.etes_vous === "Propriétaire d'une maison"
-      ).length;
-
-      campagne.invalide = pileLeads.filter(l =>
-          l.etes_vous !== "Propriétaire d'une maison"
-      ).length;
-
+      campagne.valide = pileLeads.filter(l => l.etes_vous === "Propriétaire d'une maison").length;
+      campagne.invalide = pileLeads.filter(l => l.etes_vous !== "Propriétaire d'une maison").length;
       campagne.tel = campagne.valide + campagne.invalide;
       campagne.unique = [...new Set(pileLeads.map(l => l.phone).filter(Boolean))].length;
       campagne.installer = [...new Set(pileLeads.map(l => l.zipcode).filter(Boolean))].length;
-
-      console.log(`✅ Résumé pile: ${campagne.valide} valides, ${campagne.invalide} invalides, ${campagne.tel} tél., ${campagne.unique} uniques, ${campagne.installer} installés`);
     }
 
-    return res.status(200).json({ status: true, message: "OK.", data: result });
+    return res.status(200).json({ status: true, message: "OK.", data: campagnes });
 
   } catch (err) {
     console.error("❌ Erreur getAll :", err);
