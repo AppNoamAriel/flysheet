@@ -15,6 +15,19 @@ exports.add = async (req, res) => {
 
     const { nom, url, typeProduit, objectif, departements = [], pile = false } = req.body;
 
+    // 🔒 Vérification : tous les départements doivent être entre 01 et 95
+    const invalidDeps = departements.filter(dep => {
+      const num = parseInt(dep, 10);
+      return isNaN(num) || num < 1 || num > 95;
+    });
+
+    if (invalidDeps.length > 0) {
+      return res.status(400).json({
+        status: false,
+        message: `Départements invalides : ${invalidDeps.join(', ')}. Seuls les départements 01 à 95 sont autorisés.`
+      });
+    }
+
     if (pile) {
       const typeProduitId = mongoose.Types.ObjectId.isValid(typeProduit)
           ? new mongoose.Types.ObjectId(typeProduit)
