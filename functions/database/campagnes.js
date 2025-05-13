@@ -2,13 +2,6 @@ const campagnesModel = require('../../models/campagnes');
 
 exports.add = async function (nom, url, typeProduit, objectif, departements = [], pile = false) {
   try {
-    if (pile) {
-      const existing = await campagnesModel.findOne({ typeProduit, pile: true });
-      if (existing) {
-        throw new Error(`Il y a déjà une campagne "${typeProduit} (Pile)" existante.`);
-      }
-    }
-
     const campagne = new campagnesModel({
       nom,
       url,

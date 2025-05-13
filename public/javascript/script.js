@@ -164,11 +164,10 @@ function renderFlysheetRow(flysheet) {
 
   row.innerHTML = `
     <td><a href="${flysheet.url}" class="invisible-link" target="_blank">${flysheet.pile ? `${typeProduitNom} (Pile)` : flysheet.nom}</a></td>
-    <td>${flysheet.pile ? '' : (flysheet.valide || 0)}</td>
-    <td>${flysheet.invalide || 0}</td>
-    <td>${flysheet.tel || 0}</td>
-    <td>${flysheet.unique || 0}</td>
-    <td>${flysheet.installer || 0}</td>
+    <td>${flysheet.valide ?? 0}</td>
+    <td>${flysheet.invalide ?? 0}</td>
+    <td>${flysheet.tel ?? 0}</td>
+    <td>${flysheet.unique ?? 0}</td>
     <td>${(flysheet.departements || []).map(d => d.padStart(2, '0')).sort().join(', ')}</td>
     <td>${typeProduitNom}</td>
     <td>${flysheet.pile ? '' : `

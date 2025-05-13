@@ -1,18 +1,31 @@
+const leadModel = require('../models/leads');
 const campagnesModel = require('../models/campagnes');
 const campagnesFuncData = require('../functions/database/campagnes');
+const subcategoryModel = require('../models/subcategories');
 
 exports.add = async (req, res) => {
   try {
-    console.log("REQUETE REÇUE :", req.body);
-
     if (typeof req.body.departements === 'string') {
       req.body.departements = req.body.departements
-        .split(',')
-        .map(dep => dep.trim())
-        .filter(Boolean);
+          .split(',')
+          .map(dep => dep.trim())
+          .filter(Boolean);
     }
 
     const { nom, url, typeProduit, objectif, departements = [], pile = false } = req.body;
+    if (pile) {
+      const existingPile = await campagnesModel.findOne({ pile: true, typeProduit }).populate('typeProduit');
+
+      if (existingPile) {
+        const subcatName = existingPile.typeProduit?.nom || "ce produit";
+        return res.status(400).json({
+          status: false,
+          message: `Pile déjà ajoutée. Vous ne pouvez pas en créer une deuxième pour ${subcatName}.`
+        });
+      }
+    }
+
+
     const result = await campagnesFuncData.add(nom, url, typeProduit, objectif, departements, pile);
 
     if (result.error) {
@@ -25,6 +38,7 @@ exports.add = async (req, res) => {
     res.status(500).json({ status: false, message: "Erreur serveur." });
   }
 };
+
 
 exports.delete = async (req, res) => {
   const { id } = req.params;
@@ -93,29 +107,83 @@ exports.toggleEtat = async (req, res) => {
 };
 
 exports.getAll = async (req, res) => {
+  console.log("🟡 getAll() appelée");
+
   const { nom, typeProduit, objectif } = req.query;
 
   try {
     const result = await campagnesFuncData.getBySearch(nom, typeProduit, objectif);
+    if (!result) return res.status(400).json({ status: false, message: "Erreur." });
 
-    if (!result) {
-      return res.status(400).json({
-        status: false,
-        message: "Erreur."
+    console.log(`🟡 Campagnes trouvées : ${result.length}`);
+
+    const leads = await leadModel.find({ url_flysheet: "" });
+    console.log(`🔎 Leads en pile (url_flysheet vide) : ${leads.length}`);
+
+    for (let campagne of result) {
+      if (!campagne.pile) continue;
+
+      let campagneTypeName = '';
+      let campagneTypeId = campagne.typeProduit?.toString().trim();
+
+      // Récupérer nom de sous-catégorie
+      try {
+        const subcat = await subcategoryModel.findById(campagne.typeProduit);
+        if (subcat && subcat.nom) {
+          campagneTypeName = subcat.nom.toLowerCase().trim();
+        } else {
+          campagneTypeName = campagne.typeProduit?.toString().toLowerCase().trim();
+        }
+      } catch (e) {
+        console.warn("⚠️ Erreur récupération sous-catégorie :", e.message);
+        campagneTypeName = campagne.typeProduit?.toString().toLowerCase().trim();
+      }
+
+      console.log(`📦 Analyse de la pile pour campagne : ${campagne.nom}`);
+      console.log(`🔧 Type produit attendu (nom) : "${campagneTypeName}"`);
+      console.log(`🆔 Type produit attendu (id) : "${campagneTypeId}"`);
+
+      // Logs tous les leads
+      leads.forEach((lead, i) => {
+        console.log(`➡️ [Lead ${i + 1}] lead.product = "${lead.product}"`);
       });
+
+      // Comparaison robuste
+      const pileLeads = leads.filter(lead => {
+        const leadProd = (lead.product || "").toString().toLowerCase();
+
+        const matchNom = leadProd == campagneTypeName;
+        const matchId  = leadProd == campagneTypeId;
+
+        if (matchNom || matchId) {
+          console.log(`✅ Match trouvé pour lead.product="${leadProd}"`);
+        }
+
+        return matchNom || matchId;
+      });
+
+      console.log(`🔢 Leads dans cette pile : ${pileLeads.length}`);
+
+      campagne.valide = pileLeads.filter(l =>
+          l.etes_vous === "Propriétaire d'une maison"
+      ).length;
+
+      campagne.invalide = pileLeads.filter(l =>
+          l.etes_vous !== "Propriétaire d'une maison"
+      ).length;
+
+      campagne.tel = campagne.valide + campagne.invalide;
+      campagne.unique = [...new Set(pileLeads.map(l => l.phone).filter(Boolean))].length;
+      campagne.installer = [...new Set(pileLeads.map(l => l.zipcode).filter(Boolean))].length;
+
+      console.log(`✅ Résumé pile: ${campagne.valide} valides, ${campagne.invalide} invalides, ${campagne.tel} tél., ${campagne.unique} uniques, ${campagne.installer} installés`);
     }
 
-    res.status(200).json({
-      status: true,
-      message: "OK.",
-      data: result
-    });
+    return res.status(200).json({ status: true, message: "OK.", data: result });
+
   } catch (err) {
-    console.error("Erreur getAll :", err);
-    res.status(500).json({
-      status: false,
-      message: "Erreur serveur."
-    });
+    console.error("❌ Erreur getAll :", err);
+    res.status(500).json({ status: false, message: "Erreur serveur." });
   }
 };
 
