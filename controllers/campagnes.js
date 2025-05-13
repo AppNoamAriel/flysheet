@@ -106,6 +106,8 @@ exports.toggleEtat = async (req, res) => {
   }
 };
 
+const { Types } = require('mongoose');
+
 exports.getAll = async (req, res) => {
   const { nom, typeProduit, objectif } = req.query;
 
@@ -117,16 +119,23 @@ exports.getAll = async (req, res) => {
 
     const leadsSansFlysheet = await leadModel.find({ url_flysheet: "" });
 
-    const normalize = str => str?.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+    const normalize = str =>
+        str?.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 
     for (let campagne of campagnes) {
       if (!campagne.pile) continue;
 
-      let campagneTypeId = normalize(campagne.typeProduit);
+      const campagneTypeId = normalize(campagne.typeProduit);
       let campagneTypeName = "";
 
       try {
-        const subcat = await subcategoryModel.findById(campagne.typeProduit);
+        // 💡 Convertir en ObjectId avant le findById
+        const typeProduitId = Types.ObjectId.isValid(campagne.typeProduit)
+            ? new Types.ObjectId(campagne.typeProduit)
+            : null;
+
+        const subcat = typeProduitId ? await subcategoryModel.findById(typeProduitId) : null;
+
         campagneTypeName = normalize(subcat?.nom || campagne.typeProduit);
       } catch (e) {
         campagneTypeName = campagneTypeId;
