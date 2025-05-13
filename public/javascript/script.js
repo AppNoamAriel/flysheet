@@ -116,6 +116,8 @@ async function loadTable(filters = {}) {
     if (!data.status || !Array.isArray(data.data)) return;
 
     const filtered = data.data.filter(flysheet => {
+      if (flysheet.pile) return true; // 🟢 toujours garder les piles
+
       const nomMatch = !filters.nom || flysheet.nom.toLowerCase().includes(filters.nom.toLowerCase());
 
       const typeId =
@@ -135,9 +137,9 @@ async function loadTable(filters = {}) {
         goalMatch = progress >= min && progress <= max;
       }
 
-
       return nomMatch && typeMatch && goalMatch;
     });
+
 
     filtered.forEach(renderFlysheetRow);
     attachEtatHandlers();
